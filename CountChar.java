@@ -6,51 +6,26 @@
  * Assignment: Programming assignment: count a character - from recursion to loop
  *
  * AI Use Statement:
- * Generative AI was used to assist in designing the tail-recursive accumulator implementation
- * (countAcc), converting it into the equivalent 4-step while loop (countLoop), constructing
- * the side-by-side trace table comparing recursive states to loop passes on "banana", and
- * articulating the memory mechanics of stack frame allocation vs. in-place variable updates
- * regarding JVM StackOverflowError and tail-call optimization behavior.
+ * OpenAI Codex reviewed the program, ran the supplied test client, and revised
+ * these comments for clarity and accuracy.
  *
- * -------------------------------------------------------------------------------------------------------------
- * Question 1: Trace countAcc("banana", 'a') side-by-side with countLoop("banana", 'a')
- * -------------------------------------------------------------------------------------------------------------
- * String s = "banana", length = 6. Indices: 0:'b', 1:'a', 2:'n', 3:'a', 4:'n', 5:'a'. Target char c = 'a'.
+ * Question 1: Trace countAcc("banana", 'a') and countLoop("banana", 'a').
+ * Each row shows the helper call and the start of the matching loop pass.
  *
- * Call #  countAcc Call / State            i   acc  |  Matching countLoop Pass    i (start)  acc (start)  Char Checked & Action
- * -------------------------------------------------------------------------------------------------------------
- * 1       countAcc("banana", 'a', 0, 0)    0   0    |  Pass 1                     0          0            s.charAt(0) is 'b' != 'a' -> acc stays 0, i becomes 1
- * 2       countAcc("banana", 'a', 1, 0)    1   0    |  Pass 2                     1          0            s.charAt(1) is 'a' == 'a' -> acc becomes 1, i becomes 2
- * 3       countAcc("banana", 'a', 2, 1)    2   1    |  Pass 3                     2          1            s.charAt(2) is 'n' != 'a' -> acc stays 1, i becomes 3
- * 4       countAcc("banana", 'a', 3, 1)    3   1    |  Pass 4                     3          1            s.charAt(3) is 'a' == 'a' -> acc becomes 2, i becomes 4
- * 5       countAcc("banana", 'a', 4, 2)    4   2    |  Pass 5                     4          2            s.charAt(4) is 'n' != 'a' -> acc stays 2, i becomes 5
- * 6       countAcc("banana", 'a', 5, 2)    5   2    |  Pass 6                     5          2            s.charAt(5) is 'a' == 'a' -> acc becomes 3, i becomes 6
- * 7       countAcc("banana", 'a', 6, 3)    6   3    |  Loop Exit (i == length)    6          3            Base case returns acc = 3 / Loop terminates and returns acc = 3
- * -------------------------------------------------------------------------------------------------------------
+ * Helper call   i  acc  | Loop pass   i  acc
+ *      1        0   0   |     1       0   0
+ *      2        1   0   |     2       1   0
+ *      3        2   1   |     3       2   1
+ *      4        3   1   |     4       3   1
+ *      5        4   2   |     5       4   2
+ *      6        5   2   |     6       5   2
+ *      7        6   3   |   Exit      6   3
+ * Both return 3.
  *
- * -------------------------------------------------------------------------------------------------------------
- * Question 2: Why count crashes on a string of 100,000 characters, countLoop does not, and would countAcc crash?
- * -------------------------------------------------------------------------------------------------------------
- * 1. Why count crashes:
- *    The method count is non-tail-recursive because work remains after the recursive call returns
- *    (specifically, 1 + count(...)). Every call to count must allocate a separate activation record
- *    (stack frame) on the JVM call stack to retain the caller's local variables, parameters, and return
- *    address. For a string containing 100,000 characters, 100,001 nested stack frames are created.
- *    This exceeds the maximum memory capacity allocated to the thread call stack (typically ~1 MB by
- *    default on the JVM), immediately resulting in a java.lang.StackOverflowError.
- *
- * 2. Why countLoop does not crash:
- *    countLoop executes entirely within a single stack frame. Instead of adding a new frame to the call
- *    stack for each character in the string, each iteration of the while loop updates the existing local
- *    variables (i and acc) in-place in memory. Because it consumes O(1) constant stack space regardless of
- *    how large the input string is, it completes without overflowing the stack.
- *
- * 3. Would countAcc crash, too?
- *    Yes, countAcc would also crash with a java.lang.StackOverflowError on 100,000 characters. While
- *    countAcc is written in tail-recursive form (the recursive call is the very last operation with the
- *    accumulated value passed directly), standard Java (HotSpot JVM) does NOT support Tail-Call
- *    Optimization (TCO) or tail-call elimination. Therefore, the JVM still pushes a new stack frame onto
- *    the call stack for every recursive call to countAcc, exhausting the stack just like count.
+ * Question 2: Why does recursion overflow the stack but the loop does not?
+ * count adds a stack frame for each recursive call, so 100,000 characters
+ * can fill the stack. countLoop reuses i and acc without adding frames.
+ * countAcc can overflow too: Java does not turn its tail calls into a loop.
  */
 
 public class CountChar
